@@ -36,6 +36,13 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
+        .error {
+            color: red;
+            font-size: 14px;
+            background-color: #fff3f3;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -54,8 +61,10 @@
         <div class="output-container">
             <h3>Dart Model:</h3>
             <pre id="dartModelOutput"></pre>
+            <div id="modelError" class="error" style="display: none;"></div>
             <h3>Dart Entity:</h3>
             <pre id="dartEntityOutput"></pre>
+            <div id="entityError" class="error" style="display: none;"></div>
         </div>
     </div>
 
@@ -63,6 +72,9 @@
         function convertJsonToDart() {
             const jsonInput = document.getElementById('jsonInput').value;
             const modelName = document.getElementById('modelName').value;
+            const modelErrorElement = document.getElementById('modelError');
+            const entityErrorElement = document.getElementById('entityError');
+
             if (!jsonInput || !modelName) return;
 
             try {
@@ -72,8 +84,16 @@
 
                 document.getElementById('dartModelOutput').innerText = modelCode;
                 document.getElementById('dartEntityOutput').innerText = entityCode;
+
+                modelErrorElement.style.display = 'none';
+                entityErrorElement.style.display = 'none';
             } catch (error) {
-                alert('Invalid JSON!');
+                document.getElementById('dartModelOutput').innerText = '';
+                document.getElementById('dartEntityOutput').innerText = '';
+                modelErrorElement.style.display = 'block';
+                entityErrorElement.style.display = 'block';
+                modelErrorElement.innerText = 'Invalid JSON. Please check the format.';
+                entityErrorElement.innerText = 'Invalid JSON. Please check the format.';
             }
         }
 
