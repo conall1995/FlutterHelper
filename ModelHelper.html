@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تولید مدل و موجودیت Dart</title>
+    <title>Generate Dart Model and Entity</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            direction: rtl;
-            text-align: right;
+            direction: ltr;
+            text-align: left;
         }
         .container {
             display: flex;
@@ -26,16 +26,6 @@
             padding: 10px;
             margin-bottom: 20px;
         }
-        .button {
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .button:hover {
-            background-color: #45a049;
-        }
         h3 {
             text-align: center;
         }
@@ -49,25 +39,22 @@
     </style>
 </head>
 <body>
-    <h2>تولید مدل و موجودیت Dart از JSON</h2>
+    <h2>Generate Dart Model and Entity from JSON</h2>
     <div class="container">
-        <!-- Input Section -->
         <div class="input-container">
             <div>
-                <label for="modelName">نام مدل را وارد کنید:</label>
-                <input type="text" id="modelName" placeholder="مثال: Customer">
+                <label for="modelName">Enter Model Name:</label>
+                <input type="text" id="modelName" placeholder="Example: Customer">
             </div>
             <div>
-                <label for="jsonInput">JSON را وارد کنید:</label>
-                <textarea id="jsonInput" placeholder='مثال: {"customer": {"RowNumber": 1, "Id": 5}}'></textarea>
+                <label for="jsonInput">Enter JSON:</label>
+                <textarea id="jsonInput" placeholder='Example: {"customer": {"RowNumber": 1, "Id": 5}}'></textarea>
             </div>
-            <button class="button" onclick="convertJsonToDart()">تولید کد</button>
         </div>
-        <!-- Output Section -->
         <div class="output-container">
-            <h3>مدل Dart:</h3>
+            <h3>Dart Model:</h3>
             <pre id="dartModelOutput"></pre>
-            <h3>موجودیت Dart:</h3>
+            <h3>Dart Entity:</h3>
             <pre id="dartEntityOutput"></pre>
         </div>
     </div>
@@ -86,12 +73,12 @@
                 document.getElementById('dartModelOutput').innerText = modelCode;
                 document.getElementById('dartEntityOutput').innerText = entityCode;
             } catch (error) {
-                alert('JSON نامعتبر!');
+                alert('Invalid JSON!');
             }
         }
 
         function generateDartModel(jsonObject, className) {
-            const modelFileName = toSnakeCase(className);  // تبدیل به snake_case
+            const modelFileName = toSnakeCase(className);  
             let fields = '';
             for (const key in jsonObject) {
                 fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
@@ -100,7 +87,7 @@
             return `
 import 'package:json_annotation/json_annotation.dart';
 
-part '${modelFileName}_model.g.dart';  // استفاده از snake_case
+part '${modelFileName}_model.g.dart';  
 
 @JsonSerializable()
 class ${className}Model {
@@ -165,6 +152,9 @@ ${fields}
         String.prototype.camelCase = function () {
             return this.charAt(0).toLowerCase() + this.slice(1);
         }
+
+        document.getElementById('jsonInput').addEventListener('input', convertJsonToDart);
+        document.getElementById('modelName').addEventListener('input', convertJsonToDart);
     </script>
 </body>
 </html>
