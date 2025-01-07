@@ -1,0 +1,92 @@
+function convertJsonToDart() {
+    const jsonInput = document.getElementById('jsonInput').value;
+    const modelName = document.getElementById('modelName').value;
+    if (!jsonInput || !modelName) return;
+
+    try {
+        const jsonObject = JSON.parse(jsonInput);
+        const modelCode = generateDartModel(jsonObject, modelName);
+        const entityCode = generateDartEntity(jsonObject, modelName.replace('Model', 'Entity'));
+
+        document.getElementById('dartModelOutput').innerText = modelCode;
+        document.getElementById('dartEntityOutput').innerText = entityCode;
+    } catch (error) {
+        alert('Invalid JSON!');
+    }
+}
+
+function generateDartModel(jsonObject, className) {
+    const modelFileName = toSnakeCase(className);  // تبدیل به snake_case
+    let fields = '';
+    for (const key in jsonObject) {
+        fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+    }
+
+    return `
+import 'package:json_annotation/json_annotation.dart';
+
+part '${modelFileName}_model.g.dart';  // استفاده از snake_case
+
+@JsonSerializable()
+class ${className}Model {
+${fields}
+  ${className}Model({${Object.keys(jsonObject).map(key => `this.${key.camelCase()}`).join(', ')}});
+
+  factory ${className}Model.fromJson(Map<String, dynamic> json) => _$${className}ModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$${className}ModelToJson(this);
+
+  ${className}Entity toEntity() {
+    return ${className}Entity(
+      ${Object.keys(jsonObject).map(key => `${key.camelCase()}: ${key.camelCase()}`).join(',\n      ')}
+    );
+  }
+}`;
+}
+
+function generateDartEntity(jsonObject, className) {
+    let fields = '';
+    for (const key in jsonObject) {
+        fields += `  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+    }
+
+    return `
+import 'package:equatable/equatable.dart';
+
+class ${className}Entity extends Equatable {
+${fields}
+  const ${className}Entity({${Object.keys(jsonObject).map(key => `this.${key.camelCase()}`).join(', ')}});
+
+  ${className}Entity copyWith({
+    ${Object.keys(jsonObject).map(key => `${getType(jsonObject[key])} ${key.camelCase()}`).join(', ')}
+  }) {
+    return ${className}Entity(
+      ${Object.keys(jsonObject).map(key => `${key.camelCase()}: ${key.camelCase()} ?? this.${key.camelCase()}`).join(',\n      ')}
+    );
+  }
+
+  @override
+  List<Object?> get props => [${Object.keys(jsonObject).map(key => key.camelCase()).join(', ')}];
+}`;
+}
+
+function toSnakeCase(str) {
+    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`).replace(/^_/, '');
+}
+
+function getType(value) {
+    if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
+    if (typeof value === 'string') return 'String';
+    if (typeof value === 'boolean') return 'bool';
+    if (Array.isArray(value)) return 'List<dynamic>';
+    if (typeof value === 'object') return `${capitalizeFirstLetter(Object.keys(value)[0])}Model`;
+    return 'dynamic';
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+String.prototype.camelCase = function () {
+    return this.charAt(0).toLowerCase() + this.slice(1);
+}
