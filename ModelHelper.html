@@ -1,28 +1,103 @@
-function convertJsonToDart() {
-    const jsonInput = document.getElementById('jsonInput').value;
-    const modelName = document.getElementById('modelName').value;
-    if (!jsonInput || !modelName) return;
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تولید مدل و موجودیت Dart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            direction: rtl;
+            text-align: right;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .input-container, .output-container {
+            width: 50%;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            font-size: 14px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        h3 {
+            text-align: center;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h2>تولید مدل و موجودیت Dart از JSON</h2>
+    <div class="container">
+        <!-- Input Section -->
+        <div class="input-container">
+            <div>
+                <label for="modelName">نام مدل را وارد کنید:</label>
+                <input type="text" id="modelName" placeholder="مثال: Customer">
+            </div>
+            <div>
+                <label for="jsonInput">JSON را وارد کنید:</label>
+                <textarea id="jsonInput" placeholder='مثال: {"customer": {"RowNumber": 1, "Id": 5}}'></textarea>
+            </div>
+            <button class="button" onclick="convertJsonToDart()">تولید کد</button>
+        </div>
+        <!-- Output Section -->
+        <div class="output-container">
+            <h3>مدل Dart:</h3>
+            <pre id="dartModelOutput"></pre>
+            <h3>موجودیت Dart:</h3>
+            <pre id="dartEntityOutput"></pre>
+        </div>
+    </div>
 
-    try {
-        const jsonObject = JSON.parse(jsonInput);
-        const modelCode = generateDartModel(jsonObject, modelName);
-        const entityCode = generateDartEntity(jsonObject, modelName.replace('Model', 'Entity'));
+    <script>
+        function convertJsonToDart() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const modelName = document.getElementById('modelName').value;
+            if (!jsonInput || !modelName) return;
 
-        document.getElementById('dartModelOutput').innerText = modelCode;
-        document.getElementById('dartEntityOutput').innerText = entityCode;
-    } catch (error) {
-        alert('Invalid JSON!');
-    }
-}
+            try {
+                const jsonObject = JSON.parse(jsonInput);
+                const modelCode = generateDartModel(jsonObject, modelName);
+                const entityCode = generateDartEntity(jsonObject, modelName.replace('Model', 'Entity'));
 
-function generateDartModel(jsonObject, className) {
-    const modelFileName = toSnakeCase(className);  // تبدیل به snake_case
-    let fields = '';
-    for (const key in jsonObject) {
-        fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
-    }
+                document.getElementById('dartModelOutput').innerText = modelCode;
+                document.getElementById('dartEntityOutput').innerText = entityCode;
+            } catch (error) {
+                alert('JSON نامعتبر!');
+            }
+        }
 
-    return `
+        function generateDartModel(jsonObject, className) {
+            const modelFileName = toSnakeCase(className);  // تبدیل به snake_case
+            let fields = '';
+            for (const key in jsonObject) {
+                fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+            }
+
+            return `
 import 'package:json_annotation/json_annotation.dart';
 
 part '${modelFileName}_model.g.dart';  // استفاده از snake_case
@@ -42,15 +117,15 @@ ${fields}
     );
   }
 }`;
-}
+        }
 
-function generateDartEntity(jsonObject, className) {
-    let fields = '';
-    for (const key in jsonObject) {
-        fields += `  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
-    }
+        function generateDartEntity(jsonObject, className) {
+            let fields = '';
+            for (const key in jsonObject) {
+                fields += `  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+            }
 
-    return `
+            return `
 import 'package:equatable/equatable.dart';
 
 class ${className}Entity extends Equatable {
@@ -68,25 +143,28 @@ ${fields}
   @override
   List<Object?> get props => [${Object.keys(jsonObject).map(key => key.camelCase()).join(', ')}];
 }`;
-}
+        }
 
-function toSnakeCase(str) {
-    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`).replace(/^_/, '');
-}
+        function toSnakeCase(str) {
+            return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`).replace(/^_/, '');
+        }
 
-function getType(value) {
-    if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
-    if (typeof value === 'string') return 'String';
-    if (typeof value === 'boolean') return 'bool';
-    if (Array.isArray(value)) return 'List<dynamic>';
-    if (typeof value === 'object') return `${capitalizeFirstLetter(Object.keys(value)[0])}Model`;
-    return 'dynamic';
-}
+        function getType(value) {
+            if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
+            if (typeof value === 'string') return 'String';
+            if (typeof value === 'boolean') return 'bool';
+            if (Array.isArray(value)) return 'List<dynamic>';
+            if (typeof value === 'object') return `${capitalizeFirstLetter(Object.keys(value)[0])}Model`;
+            return 'dynamic';
+        }
 
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
 
-String.prototype.camelCase = function () {
-    return this.charAt(0).toLowerCase() + this.slice(1);
-}
+        String.prototype.camelCase = function () {
+            return this.charAt(0).toLowerCase() + this.slice(1);
+        }
+    </script>
+</body>
+</html>
