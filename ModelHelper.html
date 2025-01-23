@@ -1,113 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generate Dart Model and Entity</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            direction: ltr;
-            text-align: left;
-        }
-        .container {
-            display: flex;
-            gap: 20px;
-        }
-        .input-container, .output-container {
-            width: 50%;
-        }
-        textarea {
-            width: 100%;
-            height: 200px;
-            font-family: monospace;
-            font-size: 14px;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        h3 {
-            text-align: center;
-        }
-        pre {
-            background-color: #f1f1f1;
-            padding: 10px;
-            border-radius: 5px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .error {
-            color: red;
-            font-size: 14px;
-            background-color: #fff3f3;
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-    <h2>Generate Dart Model and Entity from JSON</h2>
-    <div class="container">
-        <div class="input-container">
-            <div>
-                <label for="modelName">Enter Model Name:</label>
-                <input type="text" id="modelName" placeholder="Example: Customer">
-            </div>
-            <div>
-                <label for="jsonInput">Enter JSON:</label>
-                <textarea id="jsonInput" placeholder='Example: {"customer": {"RowNumber": 1, "Id": 5}}'></textarea>
-            </div>
-        </div>
-        <div class="output-container">
-            <h3>Dart Model:</h3>
-            <pre id="dartModelOutput"></pre>
-            <div id="modelError" class="error" style="display: none;"></div>
-            <h3>Dart Entity:</h3>
-            <pre id="dartEntityOutput"></pre>
-            <div id="entityError" class="error" style="display: none;"></div>
-        </div>
-    </div>
+<script>
+    function convertJsonToDart() {
+        const jsonInput = document.getElementById('jsonInput').value;
+        const modelName = document.getElementById('modelName').value;
+        const modelErrorElement = document.getElementById('modelError');
+        const entityErrorElement = document.getElementById('entityError');
 
-    <script>
-        function convertJsonToDart() {
-            const jsonInput = document.getElementById('jsonInput').value;
-            const modelName = document.getElementById('modelName').value;
-            const modelErrorElement = document.getElementById('modelError');
-            const entityErrorElement = document.getElementById('entityError');
+        if (!jsonInput || !modelName) return;
 
-            if (!jsonInput || !modelName) return;
+        try {
+            const jsonObject = JSON.parse(jsonInput);
+            const modelCode = generateDartModel(jsonObject, modelName);
+            const entityCode = generateDartEntity(jsonObject, modelName.replace('Model', 'Entity'));
 
-            try {
-                const jsonObject = JSON.parse(jsonInput);
-                const modelCode = generateDartModel(jsonObject, modelName);
-                const entityCode = generateDartEntity(jsonObject, modelName.replace('Model', 'Entity'));
+            document.getElementById('dartModelOutput').innerText = modelCode;
+            document.getElementById('dartEntityOutput').innerText = entityCode;
 
-                document.getElementById('dartModelOutput').innerText = modelCode;
-                document.getElementById('dartEntityOutput').innerText = entityCode;
+            modelErrorElement.style.display = 'none';
+            entityErrorElement.style.display = 'none';
+        } catch (error) {
+            document.getElementById('dartModelOutput').innerText = '';
+            document.getElementById('dartEntityOutput').innerText = '';
+            modelErrorElement.style.display = 'block';
+            entityErrorElement.style.display = 'block';
+            modelErrorElement.innerText = 'Invalid JSON. Please check the format.';
+            entityErrorElement.innerText = 'Invalid JSON. Please check the format.';
+        }
+    }
 
-                modelErrorElement.style.display = 'none';
-                entityErrorElement.style.display = 'none';
-            } catch (error) {
-                document.getElementById('dartModelOutput').innerText = '';
-                document.getElementById('dartEntityOutput').innerText = '';
-                modelErrorElement.style.display = 'block';
-                entityErrorElement.style.display = 'block';
-                modelErrorElement.innerText = 'Invalid JSON. Please check the format.';
-                entityErrorElement.innerText = 'Invalid JSON. Please check the format.';
-            }
+    function generateDartModel(jsonObject, className) {
+        const modelFileName = toSnakeCase(className);
+        let fields = '';
+        for (const key in jsonObject) {
+            fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
         }
 
-        function generateDartModel(jsonObject, className) {
-            const modelFileName = toSnakeCase(className);  
-            let fields = '';
-            for (const key in jsonObject) {
-                fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
-            }
-
-            return `
+        return `
 import 'package:json_annotation/json_annotation.dart';
 
-part '${modelFileName}_model.g.dart';  
+part '${modelFileName}_model.g.dart';
 
 @JsonSerializable()
 class ${className}Model {
@@ -124,15 +54,15 @@ ${fields}
     );
   }
 }`;
+    }
+
+    function generateDartEntity(jsonObject, className) {
+        let fields = '';
+        for (const key in jsonObject) {
+            fields += `  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
         }
 
-        function generateDartEntity(jsonObject, className) {
-            let fields = '';
-            for (const key in jsonObject) {
-                fields += `  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
-            }
-
-            return `
+        return `
 import 'package:equatable/equatable.dart';
 
 class ${className}Entity extends Equatable {
@@ -150,14 +80,30 @@ ${fields}
   @override
   List<Object?> get props => [${Object.keys(jsonObject).map(key => key.camelCase()).join(', ')}];
 }`;
-        }
+    }
 
-        function toSnakeCase(str) {
-            return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`).replace(/^_/, '');
-        }
+    function toSnakeCase(str) {
+        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`).replace(/^_/, '');
+    }
 
-        function getType(value) {
-            if (value === null) return 'dynamic';
-            if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
-            if (typeof value === 'string') return 'String';
-            
+    function getType(value) {
+        if (value === null) return 'dynamic'; // مقادیر null به عنوان dynamic تعریف می‌شوند.
+        if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
+        if (typeof value === 'string') return 'String';
+        if (typeof value === 'boolean') return 'bool';
+        if (Array.isArray(value)) return 'List<dynamic>';
+        if (typeof value === 'object') return `${capitalizeFirstLetter(Object.keys(value)[0])}Model`;
+        return 'dynamic';
+    }
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+
+    String.prototype.camelCase = function () {
+        return this.charAt(0).toLowerCase() + this.slice(1);
+    }
+
+    document.getElementById('jsonInput').addEventListener('input', convertJsonToDart);
+    document.getElementById('modelName').addEventListener('input', convertJsonToDart);
+</script>
