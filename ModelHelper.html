@@ -101,7 +101,7 @@
             const modelFileName = toSnakeCase(className);  
             let fields = '';
             for (const key in jsonObject) {
-                fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+                fields += `  @JsonKey(name: '${key}')\n  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
             }
 
             return `
@@ -129,7 +129,7 @@ ${fields}
         function generateDartEntity(jsonObject, className) {
             let fields = '';
             for (const key in jsonObject) {
-                fields += `  final ${getType(jsonObject[key])} ${key.camelCase()};\n`;
+                fields += `  final ${getType(jsonObject[key])}? ${key.camelCase()};\n`;
             }
 
             return `
@@ -140,7 +140,7 @@ ${fields}
   const ${className}Entity({${Object.keys(jsonObject).map(key => `this.${key.camelCase()}`).join(', ')}});
 
   ${className}Entity copyWith({
-    ${Object.keys(jsonObject).map(key => `${getType(jsonObject[key])} ${key.camelCase()}`).join(', ')}
+    ${Object.keys(jsonObject).map(key => `${getType(jsonObject[key])}? ${key.camelCase()}`).join(', ')}
   }) {
     return ${className}Entity(
       ${Object.keys(jsonObject).map(key => `${key.camelCase()}: ${key.camelCase()} ?? this.${key.camelCase()}`).join(',\n      ')}
