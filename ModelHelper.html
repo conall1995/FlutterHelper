@@ -157,24 +157,7 @@ ${fields}
         }
 
         function getType(value) {
+            if (value === null) return 'dynamic';
             if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'double';
             if (typeof value === 'string') return 'String';
-            if (typeof value === 'boolean') return 'bool';
-            if (Array.isArray(value)) return 'List<dynamic>';
-            if (typeof value === 'object') return `${capitalizeFirstLetter(Object.keys(value)[0])}Model`;
-            return 'dynamic';
-        }
-
-        function capitalizeFirstLetter(string) {
-            return string.charAt(0).toUpperCase() + string.slice(1);
-        }
-
-        String.prototype.camelCase = function () {
-            return this.charAt(0).toLowerCase() + this.slice(1);
-        }
-
-        document.getElementById('jsonInput').addEventListener('input', convertJsonToDart);
-        document.getElementById('modelName').addEventListener('input', convertJsonToDart);
-    </script>
-</body>
-</html>
+            
